@@ -1,10 +1,21 @@
 import os
 from logic.twitch_client import TwitchClient
-from models.stream_models import StreamBaseModel
+from models.stream_models import LivekitData, StreamBaseModel
 from logic.heygen_client import HeygenClient
 from logic.livekit_room import LivekitRoom
 from livekit import api
 
+from models.stream_models import GlobalStreamData
+
+global_stream_data: GlobalStreamData = None
+
+def get_global_stream_data() -> GlobalStreamData:
+    global global_stream_data
+    return global_stream_data
+
+def set_global_stream_data(data: GlobalStreamData) -> None:
+    global global_stream_data
+    global_stream_data = data
 
 async def start_stream():
     heygen_client = HeygenClient()
@@ -44,7 +55,17 @@ async def start_stream():
         
         print(f"Egress started with ID: {egress_info.egress_id}")
         print(f"Status: {egress_info.status}")
-        
+
+        live_kit_data = LivekitData(
+            room_name=room.room.name,
+            stream_id=egress_info.egress_id
+        )
+
+        global_stream_data = GlobalStreamData(
+            heygen_session=session_info,
+            livekit_data=live_kit_data
+        )
+        set_global_stream_data(global_stream_data)
         return StreamBaseModel(stream_id=egress_info.egress_id, success=True)
         
     except Exception as e:
@@ -53,3 +74,12 @@ async def start_stream():
     finally:
         # Important: Close the API client to avoid the "Unclosed client session" warning
         await lk_api.aclose()
+
+async def background_stream_task():
+    global_stream_data = get_global_stream_data()
+    if global_stream_data is None:
+        print("No stream data running")
+        return
+    
+    print("global_stream_data", global_stream_data)
+    

@@ -1,15 +1,44 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import asyncio
+from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
-from logic.stream_logic import start_stream
+from logic.stream_logic import background_stream_task, start_stream
 
 # Load environment variables from .env file
 load_dotenv()
 
+# Global variable to track background task
+background_task_running = False
+
+async def background_task():
+    """Simple background task that runs continuously"""
+    global background_task_running
+    background_task_running = True
+    
+    print("🚀 Background stream task started!")
+    
+    while background_task_running:
+        # This is where your continuous logic would go
+        print("💗 Background task heartbeat - I'm still running!")
+        await background_stream_task()
+        
+        # Sleep for 5 seconds before next heartbeat
+        await asyncio.sleep(5)
+    
+    print("🛑 Background stream task stopped")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(background_task())
+    yield
+    # Clean up logic here
 
 # Create FastAPI instance
 app = FastAPI(
+    lifespan=lifespan,
     title="Twitch IA API",
     description="A basic FastAPI integration for Twitch IA project",
     version="1.0.0",
