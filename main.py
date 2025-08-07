@@ -1,8 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional
 import uvicorn
+from dotenv import load_dotenv
+from logic.stream_logic import start_stream
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 # Create FastAPI instance
 app = FastAPI(
@@ -11,7 +15,8 @@ app = FastAPI(
     version="1.0.0", 
     docs_url="/",              # Serve Swagger UI at root
     redoc_url=None,            # Disable ReDoc (optional)
-    openapi_url="/openapi.json"  # (default; can be changed)
+    openapi_url="/openapi.json",  # (default; can be changed),
+    debug=True
 )
 
 # Add CORS middleware
@@ -33,6 +38,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "twitch-ia-api"}
+
+@app.post("/start-stream")
+async def start_stream_endpoint():
+    start_stream_object = start_stream()
+    return {"data": start_stream_object}
+
 
 
 # Run the application
