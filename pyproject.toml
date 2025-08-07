@@ -16,6 +16,7 @@ dependencies = [
     "requests>=2.32.4",
     "livekit-api>=0.4.4",
     "websocket-client>=1.8.0",
+    "websockets>=13.1",
 ]
 
 [project.optional-dependencies]

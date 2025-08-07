@@ -29,6 +29,7 @@ class AvatarStatus(str, Enum):
 
 class GlobalStreamData(BaseModel):
     listener_enabled: bool = False
+    tw_chat_listener_enabled: bool = False
     avatar_status: AvatarStatus = AvatarStatus.IDLE
     heygen_session: HeygenSessionModel
     livekit_data: LivekitData

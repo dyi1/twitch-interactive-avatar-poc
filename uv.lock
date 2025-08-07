@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.8.1"
 resolution-markers = [
     "python_full_version >= '3.10'",
@@ -3083,6 +3083,8 @@ dependencies = [
     { name = "uvicorn", version = "0.33.0", source = { registry = "https://pypi.org/simple" }, extra = ["standard"], marker = "python_full_version < '3.9'" },
     { name = "uvicorn", version = "0.35.0", source = { registry = "https://pypi.org/simple" }, extra = ["standard"], marker = "python_full_version >= '3.9'" },
     { name = "websocket-client" },
+    { name = "websockets", version = "13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "websockets", version = "15.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
 ]
 
 [package.optional-dependencies]
@@ -3120,6 +3122,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.4" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.24.0" },
     { name = "websocket-client", specifier = ">=1.8.0" },
+    { name = "websockets", specifier = ">=13.1" },
 ]
 provides-extras = ["dev"]
 

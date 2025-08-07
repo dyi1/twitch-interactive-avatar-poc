@@ -6,7 +6,7 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from logic.stream_logic import avatar_status_listener, background_stream_task, send_text_to_stream, start_stream
+from logic.stream_logic import twitch_chat_listener, avatar_status_listener, background_stream_task, send_text_to_stream, start_stream
 from pydantic import BaseModel
 
 # Load environment variables from .env file
@@ -19,17 +19,17 @@ async def background_task():
     """Simple background task that runs continuously"""
     global background_task_running
     background_task_running = True
-    
+
     print("🚀 Background stream task started!")
-    
+
     while background_task_running:
         # This is where your continuous logic would go
         print("💗 Background task heartbeat - I'm still running!")
         await background_stream_task()
-        
+
         # Sleep for 5 seconds before next heartbeat
         await asyncio.sleep(5)
-    
+
     print("🛑 Background stream task stopped")
 
 async def avatar_status_task():
@@ -40,11 +40,20 @@ async def avatar_status_task():
         print("💗 Avatar status task heartbeat - I'm still running!")
         await avatar_status_listener()
         await asyncio.sleep(5)
-    
+
+async def twitch_chat_task():
+    global twitch_chat_task_running
+    twitch_chat_task_running = True
+
+    while twitch_chat_task_running:
+        await twitch_chat_listener()
+        await asyncio.sleep(5)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     asyncio.create_task(background_task())
     asyncio.create_task(avatar_status_task())
+    asyncio.create_task(twitch_chat_task())
     yield
     # Clean up logic here
 
