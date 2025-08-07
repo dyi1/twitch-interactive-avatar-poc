@@ -1,54 +1,55 @@
+import os
 from logic.twitch_client import TwitchClient
-from models.stream_models import SDPOfferModel, StreamBaseModel
-from aiortc import RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaRecorder
+from models.stream_models import StreamBaseModel
 from logic.heygen_client import HeygenClient
 from logic.livekit_room import LivekitRoom
+from livekit import api
 
-# pcs = set()
 
 async def start_stream():
-    # twitch_client = TwitchClient()
-    # twitch_client.stream_to_twitch()
-
     heygen_client = HeygenClient()
-    resp = heygen_client.create_session()
-    print("create session", resp)
-
-    resp2 = heygen_client.start_stream(resp.session_id)
-    print("start stream", resp2)
+    session_info = heygen_client.create_session()
+    heygen_client.start_stream(session_info.session_id)
 
     room = LivekitRoom()
-    await room.connect(resp.url, resp.access_token)
+    await room.connect(session_info.url, session_info.access_token)
 
-
-
-    # print(url)
-    # offer = SDPOfferModel(sdp=twitch_client.get_stream_url(), type="offer")
-    # pc = RTCPeerConnection()
-    # pcs.add(pc)
-
-    # recorder = MediaRecorder(twitch_client.get_stream_url(), format="flv")
-
-    # @pc.on("track")
-    # async def on_track(track):
-    #     print(f"🎥 Track received: {track.kind}")
-    #     await recorder.addTrack(track)
-
-    #     @track.on("ended")
-    #     async def on_ended():
-    #         print(f"🛑 Track ended: {track.kind}")
-    #         await recorder.stop()
-
-    # await pc.setRemoteDescription(RTCSessionDescription(sdp=offer.sdp, type=offer.type))
-    # await recorder.start()
-
-    # answer = await pc.createAnswer()
-    # await pc.setLocalDescription(answer)
-
-    # return {
-    #     "sdp": pc.localDescription.sdp,
-    #     "type": pc.localDescription.type
-    # }
-
-    return StreamBaseModel(stream_id="1234567890", success=True)
+    live_kit_api_key = os.getenv("LIVEKIT_API_KEY")
+    live_kit_api_secret = os.getenv("LIVEKIT_API_SECRET")
+    
+    # Create the LiveKitAPI client
+    lk_api = api.LiveKitAPI(
+        session_info.url,
+        live_kit_api_key,
+        live_kit_api_secret
+    )
+    
+    # Get the egress client
+    egress_client = lk_api.egress
+    twitch_client = TwitchClient()
+    
+    start_request = api.RoomCompositeEgressRequest(
+        room_name=room.room.name,
+        stream_outputs=[
+            api.StreamOutput(
+                protocol=api.StreamProtocol.RTMP,
+                urls=[twitch_client.get_stream_url()]
+            )
+        ]
+    )
+    try:
+        egress_info = await egress_client.start_room_composite_egress(
+            start_request
+        )
+        
+        print(f"Egress started with ID: {egress_info.egress_id}")
+        print(f"Status: {egress_info.status}")
+        
+        return StreamBaseModel(stream_id=egress_info.egress_id, success=True)
+        
+    except Exception as e:
+        print(f"Failed to start egress: {e}")
+        raise
+    finally:
+        # Important: Close the API client to avoid the "Unclosed client session" warning
+        await lk_api.aclose()
