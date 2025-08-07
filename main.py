@@ -12,7 +12,7 @@ load_dotenv()
 app = FastAPI(
     title="Twitch IA API",
     description="A basic FastAPI integration for Twitch IA project",
-    version="1.0.0", 
+    version="1.0.0",
     docs_url="/",              # Serve Swagger UI at root
     redoc_url=None,            # Disable ReDoc (optional)
     openapi_url="/openapi.json",  # (default; can be changed),
@@ -43,8 +43,6 @@ async def health_check():
 async def start_stream_endpoint():
     start_stream_object = await start_stream()
     return {"data": start_stream_object}
-
-
 
 # Run the application
 if __name__ == "__main__":

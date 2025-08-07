@@ -8,3 +8,9 @@ class StreamBaseModel(BaseModel):
 class SDPOfferModel(BaseModel):
     sdp: str
     type: str
+
+
+class HeygenSessionModel(BaseModel):
+    session_id: str
+    access_token: str
+    url: str
