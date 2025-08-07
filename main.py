@@ -41,7 +41,7 @@ async def health_check():
 
 @app.post("/start-stream")
 async def start_stream_endpoint():
-    start_stream_object = start_stream()
+    start_stream_object = await start_stream()
     return {"data": start_stream_object}
 
 
