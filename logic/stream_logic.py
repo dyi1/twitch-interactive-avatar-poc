@@ -1,12 +1,20 @@
+import json
 import os
+import random
+import threading
 from logic.twitch_client import TwitchClient
-from models.stream_models import LivekitData, StreamBaseModel
+from models.stream_models import AvatarStatus, ChatMessage, LivekitData, StreamBaseModel
 from logic.heygen_client import HeygenClient
 from logic.livekit_room import LivekitRoom
 from livekit import api
+import websocket
 
 from models.stream_models import GlobalStreamData
-
+TOPICS = [
+    "Tell me a story about HeyGen", 
+    "Let me know about the latest and greatest in AI",
+    "What is the weather in Tokyo?",
+]
 global_stream_data: GlobalStreamData = None
 
 def get_global_stream_data() -> GlobalStreamData:
@@ -82,8 +90,13 @@ async def send_text_to_stream(text: str, task_type: str = "chat"):
         print("No stream data running")
         return
     
-    heygen_client = HeygenClient()
-    resp = heygen_client.send_text(global_stream_data.heygen_session.session_id, text, task_type)
+    global_stream_data.chat_queue.append(
+        ChatMessage(
+            text=text,
+            task_type=task_type,
+        )
+    )
+
     return True
 
 async def background_stream_task():
@@ -92,5 +105,63 @@ async def background_stream_task():
         print("No stream data running")
         return
     
-    print("global_stream_data", global_stream_data)
+    print(global_stream_data.chat_queue)
+    print(global_stream_data.avatar_status)
+    if global_stream_data.avatar_status == AvatarStatus.IDLE:
+        if len(global_stream_data.chat_queue) > 0:
+
+            chat_message = global_stream_data.chat_queue.pop(0)
+            text = chat_message.text
+            task_type = chat_message.task_type
+        else:
+            text = random.choice(TOPICS)
+            task_type = "chat"
+
+        heygen_client = HeygenClient()
+        session_id = global_stream_data.heygen_session.session_id
+        heygen_client.send_text(session_id, text, task_type)
+        global_stream_data.avatar_status = AvatarStatus.TALKING
+        
+
+async def avatar_status_listener():
+    global_stream_data = get_global_stream_data()
+    if global_stream_data is None:
+        print("No stream data running")
+        return
+    
+    if global_stream_data.listener_enabled:
+        print("Listener already enabled")
+        return
+
+    def on_message(ws, message):
+        print("Received:", message)
+        json_data = json.loads(message)
+        if json_data.get("state") == 0:
+            global_stream_data.avatar_status = AvatarStatus.IDLE
+
+    def on_error(ws, error):
+        print("Error:", error)
+
+    def on_close(ws, close_status_code, close_msg):
+        print("Connection closed:", close_status_code, close_msg)
+
+    def on_open(ws):
+        print("Connection opened")
+
+    def start_listener():
+        ws = websocket.WebSocketApp(
+            global_stream_data.heygen_session.realtime_endpoint,
+            on_open=on_open,
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close
+        )
+
+        ws.run_forever()
+    
+    thread = threading.Thread(target=start_listener)
+    thread.daemon = False  # Keep the process alive
+    thread.start()
+
+    global_stream_data.listener_enabled = True
     

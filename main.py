@@ -1,3 +1,4 @@
+from tkinter import W
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -5,7 +6,7 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from logic.stream_logic import background_stream_task, send_text_to_stream, start_stream
+from logic.stream_logic import avatar_status_listener, background_stream_task, send_text_to_stream, start_stream
 from pydantic import BaseModel
 
 # Load environment variables from .env file
@@ -31,9 +32,19 @@ async def background_task():
     
     print("🛑 Background stream task stopped")
 
+async def avatar_status_task():
+    """Simple background task that runs continuously"""
+    global avatar_status_task_running
+    avatar_status_task_running = True
+    while avatar_status_task_running:
+        print("💗 Avatar status task heartbeat - I'm still running!")
+        await avatar_status_listener()
+        await asyncio.sleep(5)
+    
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     asyncio.create_task(background_task())
+    asyncio.create_task(avatar_status_task())
     yield
     # Clean up logic here
 

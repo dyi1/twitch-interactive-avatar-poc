@@ -16,10 +16,10 @@ class HeygenClient:
             },
             json={
                 "version": "v2",
-                "avatar_id": "Ann_Therapist_public",
+                "avatar_id": "Wayne_20240711",
             }
         )
-        print(resp.json()["data"])
+        # print(resp.json()["data"])
 
         return HeygenSessionModel(**resp.json()["data"])
 
