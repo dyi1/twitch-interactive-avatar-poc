@@ -5,7 +5,8 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from logic.stream_logic import background_stream_task, start_stream
+from logic.stream_logic import background_stream_task, send_text_to_stream, start_stream
+from pydantic import BaseModel
 
 # Load environment variables from .env file
 load_dotenv()
@@ -68,10 +69,19 @@ async def root():
 async def health_check():
     return {"status": "healthy", "service": "twitch-ia-api"}
 
+
 @app.post("/start-stream")
 async def start_stream_endpoint():
     start_stream_object = await start_stream()
     return {"data": start_stream_object}
+
+class SendTextRequest(BaseModel):
+    text: str
+    task_type: str = "chat"
+@app.post("/send-text")
+async def send_text_endpoint(payload: SendTextRequest):
+    await send_text_to_stream(payload.text, payload.task_type)
+    return {"data": "text sent"}
 
 # Run the application
 if __name__ == "__main__":

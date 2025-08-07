@@ -75,6 +75,17 @@ async def start_stream():
         # Important: Close the API client to avoid the "Unclosed client session" warning
         await lk_api.aclose()
 
+
+async def send_text_to_stream(text: str, task_type: str = "chat"):
+    global_stream_data = get_global_stream_data()
+    if global_stream_data is None:
+        print("No stream data running")
+        return
+    
+    heygen_client = HeygenClient()
+    resp = heygen_client.send_text(global_stream_data.heygen_session.session_id, text, task_type)
+    return True
+
 async def background_stream_task():
     global_stream_data = get_global_stream_data()
     if global_stream_data is None:

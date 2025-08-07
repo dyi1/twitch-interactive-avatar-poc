@@ -34,3 +34,19 @@ class HeygenClient:
         )
 
         return resp.json()
+
+    def send_text(self, session_id: str, text: str, task_type: str = "chat"):
+        resp = requests.post(
+            f"{self.url}/v1/streaming.task",
+            headers={
+                "Authorization": f"Bearer {self.heygen_api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "session_id": session_id,
+                "text": text,
+                "task_type": task_type
+            }
+        )
+
+        return resp.json()
